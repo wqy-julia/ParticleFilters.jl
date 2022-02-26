@@ -23,6 +23,22 @@ function predict!(pm, m::POMDP, b, a, rng)
         end
     end
     if all_terminal
+        bs = initialstate(m)
+        tmp = Random.gentype(b)[]
+        for i in 1:100
+            push!(tmp,Random.rand(rng,bs))
+        end
+        b = ParticleCollection(tmp)
+        for i in 1:n_particles(b)
+            s = particle(b, i)
+            if !isterminal(m, s)
+                all_terminal = false
+                sp = @gen(:sp)(m, s, a, rng)
+                pm[i] = sp
+            end
+        end
+    end
+    if all_terminal
         error("Particle filter update error: all states in the particle collection were terminal.")
     end
 end
