@@ -36,6 +36,7 @@ export
     predict!,
     reweight,
     reweight!,
+    predict_and_reweight!,
     particle_memory
 
 export

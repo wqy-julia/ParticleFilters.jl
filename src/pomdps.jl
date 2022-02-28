@@ -43,6 +43,51 @@ function predict!(pm, m::POMDP, b, a, rng)
     end
 end
 
+function predict_and_reweight!(pm, wm, predict_model::POMDP, reweight_model::POMDP, b, a, o, rng)
+    all_terminal = true
+    for i in 1:n_particles(b)
+        s = particle(b, i)
+        if !isterminal(predict_model, s)
+            all_terminal = false
+            sp = @gen(:sp)(predict_model, s, a, rng)
+            pm[i] = sp
+        end
+        if isterminal(reweight_model, s)
+            # wm[i] = 0.0
+            wm[i] = 1e-6
+        else
+            sp = pm[i]
+            wm[i] = obs_weight(reweight_model, s, a, sp, o) == 0 ? 1e-6 : obs_weight(reweight_model, s, a, sp, o)
+        end
+    end
+    if all_terminal
+        bs = initialstate(predict_model)
+        tmp = Random.gentype(b)[]
+        for i in 1:n_particles(b)
+            push!(tmp,Random.rand(rng,bs))
+        end
+        b = ParticleCollection(tmp)
+        for i in 1:n_particles(b)
+            s = particle(b, i)
+            if !isterminal(predict_model, s)
+                all_terminal = false
+                sp = @gen(:sp)(predict_model, s, a, rng)
+                pm[i] = sp
+            end
+            if isterminal(reweight_model, s)
+                # wm[i] = 0.0
+                wm[i] = 1e-6
+            else
+                sp = pm[i]
+                wm[i] = obs_weight(reweight_model, s, a, sp, o) == 0 ? 1e-6 : obs_weight(reweight_model, s, a, sp, o)
+            end
+        end
+    end
+    if all_terminal
+        error("Particle filter update error: all states in the particle collection were terminal.")
+    end
+end
+
 particle_memory(pmodel::POMDP) = statetype(pmodel)[]
 
 # all of the lines with resample should be changed to rand(rng, d, 3) when that becomes part of the POMDPs.jl standard
