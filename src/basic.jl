@@ -48,9 +48,9 @@ function update(up::BasicParticleFilter, b::ParticleCollection, a, o)
     wm = up._weight_memory
     resize!(pm, n_particles(b))
     resize!(wm, n_particles(b))
-    predict_and_reweight!(pm, wm, up.predict_model, up.reweight_model, b, a, o, up.rng)
-    # predict!(pm, up.predict_model, b, a, o, up.rng)
-    # reweight!(wm, up.reweight_model, b, a, pm, o, up.rng)
+    # predict_and_reweight!(pm, wm, up.predict_model, up.reweight_model, b, a, o, up.rng)
+    predict!(pm, up.predict_model, b, a, o, up.rng)
+    reweight!(wm, up.reweight_model, b, a, pm, o, up.rng)
 
     return resample(up.resampler,
                     WeightedParticleBelief(pm, wm, sum(wm), nothing),
